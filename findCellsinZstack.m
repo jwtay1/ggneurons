@@ -1,59 +1,57 @@
 %This script attempts to identify cells from z-stack recordings of the
-%glutamate reporter
+%glutamate reporter. The script works by creating a 3D binary mask of the
+%fluoresence channel through simple intensity thresholding. The binary mask
+%is then labeled and can be displayed using MATLAB's built-in volume viewer
+%tool.
 
 clearvars
 clc
 
-bfr = BioformatsImage('D:\Work\CZI Dynamic Imaging RFA\data\a773_zstack_nozoom_smallclusters.oir');
+%Parameters
+imageFile = 'D:\Work\CZI Dynamic Imaging RFA\data\a773_zstack_nozoom_smallclusters.oir';
+thresholdLvl = 4085;
 
-%%
+%% Begin code
+
+%Create a BioformatsImage object to read in OIR file
+bfr = BioformatsImage(imageFile);
+
+%Initialize empty matrices to hold image and mask information
 spotMask = false(bfr.height, bfr.width, bfr.sizeZ);
-
 vol = zeros(bfr.height, bfr.width, bfr.sizeZ, 'uint16');
 
+%Create a mask for each z-plane
 for iZ = 1:bfr.sizeZ
+    
+    %Read in plane image
     I = getPlane(bfr, iZ, 1, 1);
     
+    %Save the current z-plane into a 3D matrix for later viewing
+    vol(:, :, iZ) = I;
+        
+    %Create the mask by thresholding
     spotMask(:, :, iZ) = I > 4085;
     
+    %Remove small spots < 10 pixels in area
     spotMask(:, :, iZ) = bwareaopen(spotMask(:, :, iZ), 10);
     
-    vol(:, :, iZ) = I;
-    
-    %showoverlay(I, spotMask, 'opacity', 40);
-    
-%     if iZ == 1
-%         imwrite(spotMask(:, :, iZ), 'spotmask.tif');
-%     else
-%         imwrite(spotMask(:, :, iZ), 'spotmask.tif', 'writeMode', 'append')
-%     end
-       
 end
 
 %% Analysis
 
+%Clean up the final mask by removing anything less than 200 pixels in
+%volume
 spotMask = bwareaopen(spotMask, 200, 26);
 
-celldata = regionprops3(spotMask);
-
+%Create a labeled image
 labeledVol = bwlabeln(spotMask);
 
-%%
-return
+%Measure volume properties
+celldata = regionprops3(spotMask);
 
-%Identify individual cells using the maximum intensity projection
-%Get a MIP
-mipMask = max(spotMask, [], 3);
+%% Visualization
 
-mipMask = imclose(mipMask, strel('disk', 2));
-mipMask = bwareaopen(mipMask, 200);
+volumeViewer(vol, labeledVol);
 
-cellsBB = regionprops(mipMask, 'BoundingBox');
-
-imshow(mipMask, [])
-
-%For a single plane, run a spot finding algorithm and count spots, quantify
-%intensity?
-
-
-
+%Note: I think it looks better to set the background color to black in the
+%resulting GUI
