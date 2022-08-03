@@ -6,7 +6,8 @@ clearvars
 clc
 
 %Parameters
-imageFile = 'D:\Work\CZI Dynamic Imaging RFA\data\A473_res_middle_5min_power2_post.oir';
+% imageFile = 'D:\Work\CZI Dynamic Imaging RFA\data\A473_res_middle_5min_power2_post.oir';
+imageFile = 'D:\Work\CZI Dynamic Imaging RFA\data\A482_res_middle_5min_power2.oir';
 outputDir = 'D:\Work\CZI Dynamic Imaging RFA\processed\';
 
 %% Start code
@@ -16,6 +17,7 @@ bfr = BioformatsImage(imageFile);
 
 %Create a LAPLinker object to create tracks
 LAP = LAPLinker;
+LAP.LinkScoreRange = [0 15];
 
 %Create a video file
 if ~exist(outputDir, 'dir')
@@ -74,3 +76,58 @@ objData = getTrack(LAP, 2);
 
 %Plot the mean intensity of the spot
 plot(objData.Frames, objData.MeanIntensity)
+
+return
+%% Export images for figures
+topLeft = [190 35];
+imgSize = 200;
+
+[spotMask, dogImg] = detectSpots(I, 3, 2);
+spotMask = bwareaopen(spotMask, 10);
+
+cropI = I(topLeft(1):(topLeft(1) + imgSize), topLeft(2):(topLeft(2) + imgSize));
+
+cropI = double(cropI);
+cropI = cropI ./ max(cropI(:));
+cropI = cat(3, zeros(size(cropI)), cropI, zeros(size(cropI)));
+cropI = imresize(cropI, 2, 'nearest');
+imwrite(cropI, 'D:\Work\CZI Dynamic Imaging RFA\proposal\Figures\spots.png')
+
+cropDoG = dogImg(topLeft(1):(topLeft(1) + imgSize), topLeft(2):(topLeft(2) + imgSize));
+
+cropDoG = double(cropDoG);
+cropDoG = cropDoG ./ max(cropDoG(:));
+cropDoG = imresize(cropDoG, 2, 'nearest');
+imwrite(cropDoG, 'D:\Work\CZI Dynamic Imaging RFA\proposal\Figures\dog.png')
+
+cropMask = spotMask(topLeft(1):(topLeft(1) + imgSize), topLeft(2):(topLeft(2) + imgSize));
+
+cropMask = double(cropMask);
+cropMask = cropMask ./ max(cropMask(:));
+cropMask = imresize(cropMask, 2, 'nearest');
+
+imwrite(cropMask, 'D:\Work\CZI Dynamic Imaging RFA\proposal\Figures\mask.png')
+
+%%
+figure;
+
+%Convert to time
+dt = (1/3)/60; %3 frame/sec
+
+for iTrack = [1 2]
+    
+    currTrack = getTrack(LAP, iTrack);
+    
+    tt = currTrack.Frames * dt;
+    
+    plot(tt, currTrack.MeanIntensity);%, tt, smooth(currTrack.MeanIntensity, 5), '--')
+    hold on
+    
+end
+plot([90/60 90/60], ylim, 'k--', [180/60 180/60], ylim, 'k--')
+
+hold off
+xlabel('Time (min)')
+ylabel('Intensity (arb. units)')
+xlim([0 5])
+

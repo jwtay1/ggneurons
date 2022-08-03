@@ -1,4 +1,4 @@
-function spotMask = detectSpots(imageIn, minSpotSize, spotThreshold)
+function [spotMask, dogImg] = detectSpots(imageIn, minSpotSize, spotThreshold)
 
 imageIn = double(imageIn);
 

@@ -55,3 +55,24 @@ volumeViewer(vol, labeledVol);
 
 %Note: I think it looks better to set the background color to black in the
 %resulting GUI
+
+%% Export spot mask for images
+imgSize = 175;
+topleft = [585, 249];
+for iZ = 10:20
+    
+    %Normalize the volume image and make it green
+    currI = double(vol(:, :, iZ));
+    currI = currI(topleft(1):(topleft(1)+imgSize), topleft(2):(topleft(2)+imgSize));
+    currI = currI ./ max(currI(:));   
+    currI = uint16(currI * 65535);
+    currI = cat(3, zeros(size(currI), 'uint16'), currI, zeros(size(currI), 'uint16'));
+    
+    imwrite(currI, fullfile('D:\Work\CZI Dynamic Imaging RFA\proposal\Figures\z-Seg', ['iZ_',int2str(iZ),'.png']));
+    
+    %Export the mask
+    currMask = spotMask(:, :, iZ);
+    currMask = currMask(topleft(1):(topleft(1)+imgSize), topleft(2):(topleft(2)+imgSize));
+    imwrite(currMask, fullfile('D:\Work\CZI Dynamic Imaging RFA\proposal\Figures\z-Seg', ['mask_',int2str(iZ),'.png']));
+        
+end
