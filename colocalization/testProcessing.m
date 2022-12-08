@@ -59,6 +59,8 @@ for iZ = 1:size(spotMaskGreen, 3)
     
 end
 
+spotMaskMatch = bwareaopen(spotMaskMatch, 15, 26);
+
 %%
 %To detect intersecting volumes, could do a count using ismember for each
 %object in the z-plane for each object in each z plane
@@ -67,6 +69,8 @@ dataRed = regionprops3(spotMaskRed, 'VoxelIdxList', 'Volume');
 
 dataMatch = bwconncomp(spotMaskMatch);
 numMatches = dataMatch.NumObjects;
+
+
 
 %% Make a 3D label
 
